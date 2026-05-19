@@ -122,8 +122,21 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   const login = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      if (error.code === 'auth/unauthorized-domain') {
+        alert("Domain Unauthorized: Please add your Vercel domain (e.g., your-app.vercel.app) to Authorized Domains in Firebase Console > Authentication > Settings.");
+      } else if (error.code === 'auth/popup-blocked') {
+        alert("Popup Blocked: Please allow popups for this site to sign in.");
+      } else if (error.code === 'auth/operation-not-allowed') {
+        alert("Google Sign-In not enabled: Please enable Google Provider in Firebase Console > Authentication > Sign-in method.");
+      } else {
+        alert("Login failed: " + error.message);
+      }
+    }
   };
 
   const logout = () => signOut(auth);

@@ -38,7 +38,7 @@ service cloud.firestore {
     function isValidWithdrawal(data) {
       return data.userId == request.auth.uid &&
              data.amount is number && data.amount >= 50000 &&
-             data.method in ['paytm', 'phonepe', 'paypal'] &&
+             data.method in ['upi', 'mobile', 'paypal'] &&
              data.status == 'pending' &&
              data.accountDetails is string && data.accountDetails.size() <= 256 &&
              data.createdAt is string;
