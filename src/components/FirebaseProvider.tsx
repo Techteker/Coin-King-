@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, query, where, getDocs, increment, updateDoc, addDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, query, where, getDocs, increment, updateDoc, addDoc, limit } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -83,7 +83,17 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Listen for profile changes
         const unsubProfile = onSnapshot(userDocRef, async (docSnap) => {
           if (docSnap.exists()) {
-            setProfile(docSnap.data() as UserProfile);
+            const data = docSnap.data() as UserProfile;
+            if (!data.referralCode) {
+              const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+              try {
+                await updateDoc(userDocRef, { referralCode: generatedCode });
+                data.referralCode = generatedCode;
+              } catch (err) {
+                console.error("Failed to backfill referralCode:", err);
+              }
+            }
+            setProfile(data);
           } else {
             // New user initialization
             const referralCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -94,14 +104,23 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             
             if (refCode) {
               try {
-                const q = query(collection(db, 'users'), where('referralCode', '==', refCode));
+                const cleanRefCode = refCode.trim().toUpperCase();
+                const q = query(collection(db, 'users'), where('referralCode', '==', cleanRefCode));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
-                  const referrerDoc = querySnapshot.docs[0];
-                  referredByUid = referrerDoc.id;
-                  
-                  // Award the referrer instantly if needed, or we do it when we create the referee
-                  // Let's award both 1000 coins now
+                  referredByUid = querySnapshot.docs[0].id;
+                } else if (cleanRefCode.length === 6) {
+                  // Fallback: Check if it's a 6-character UID prefix
+                  const qPrefix = query(
+                    collection(db, 'users'),
+                    where('__name__', '>=', cleanRefCode),
+                    where('__name__', '<=', cleanRefCode + '\uf8ff'),
+                    limit(1)
+                  );
+                  const prefixSnapshot = await getDocs(qPrefix);
+                  if (!prefixSnapshot.empty) {
+                    referredByUid = prefixSnapshot.docs[0].id;
+                  }
                 }
               } catch (err) {
                 console.error("Referral lookup failed:", err);

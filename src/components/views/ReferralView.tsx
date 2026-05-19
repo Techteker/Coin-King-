@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Users, Copy, Check, Info, Calendar, Mail, User, Wallet, Sparkles, AlertCircle } from 'lucide-react';
 import { useAuth } from '../FirebaseProvider';
 import { db } from '../../lib/firebase';
-import { doc, updateDoc, getDoc, arrayUnion, increment, addDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, arrayUnion, increment, addDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 
 const ReferralView: React.FC = () => {
@@ -59,17 +59,40 @@ const ReferralView: React.FC = () => {
         referrerId = querySnapshot.docs[0].id;
         referrerName = querySnapshot.docs[0].data().displayName || 'Friend';
       } else {
-        // Fallback: Check if it's a direct UID
-        const directRef = doc(db, 'users', referrerCode);
-        const directSnap = await getDoc(directRef);
-        if (directSnap.exists()) {
-          referrerId = directSnap.id;
-          referrerName = directSnap.data().displayName || 'Friend';
-        } else {
-          setError('Invalid referral code.');
-          setIsClaiming(false);
-          return;
+        // 2. Search by prefix if it's a 6-character code (like slice of UID)
+        if (cleanCode.length === 6) {
+          const qPrefix = query(
+            collection(db, 'users'),
+            where('__name__', '>=', cleanCode),
+            where('__name__', '<=', cleanCode + '\uf8ff'),
+            limit(1)
+          );
+          const prefixSnapshot = await getDocs(qPrefix);
+          if (!prefixSnapshot.empty) {
+            referrerId = prefixSnapshot.docs[0].id;
+            referrerName = prefixSnapshot.docs[0].data().displayName || 'Friend';
+          }
         }
+        
+        // 3. Fallback: Check if it's a direct UID
+        if (!referrerId) {
+          const directRef = doc(db, 'users', referrerCode);
+          try {
+            const directSnap = await getDoc(directRef);
+            if (directSnap.exists()) {
+              referrerId = directSnap.id;
+              referrerName = directSnap.data().displayName || 'Friend';
+            }
+          } catch (e) {
+            console.warn("Direct document check skipped or rejected:", e);
+          }
+        }
+      }
+
+      if (!referrerId) {
+        setError('Invalid referral code.');
+        setIsClaiming(false);
+        return;
       }
 
       const userRef = doc(db, 'users', profile.uid);
