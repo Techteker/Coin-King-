@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc, onSnapshot, getDocFromServer } from 'firebase/firestore';
+import { doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, query, where, getDocs, increment, updateDoc, addDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
 
@@ -87,19 +87,73 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           } else {
             // New user initialization
             const referralCode = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            // Referral Logic
+            let referredByUid: string | null = null;
+            const refCode = localStorage.getItem('referredByCode');
+            
+            if (refCode) {
+              try {
+                const q = query(collection(db, 'users'), where('referralCode', '==', refCode));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                  const referrerDoc = querySnapshot.docs[0];
+                  referredByUid = referrerDoc.id;
+                  
+                  // Award the referrer instantly if needed, or we do it when we create the referee
+                  // Let's award both 1000 coins now
+                }
+              } catch (err) {
+                console.error("Referral lookup failed:", err);
+              }
+            }
+
             const newProfile: UserProfile = {
               uid: firebaseUser.uid,
               email: firebaseUser.email,
               displayName: firebaseUser.displayName,
               photoURL: firebaseUser.photoURL,
-              balance: 0,
+              balance: referredByUid ? 1000 : 0,
               referralCode,
               lastDailyClaim: null,
               dailyStreak: 0,
               createdAt: new Date().toISOString(),
+              referredBy: referredByUid,
+              totalReferralEarnings: 0
             };
+
             try {
               await setDoc(userDocRef, newProfile);
+              
+              // Record referee transaction
+              if (referredByUid) {
+                await addDoc(collection(db, 'transactions'), {
+                  userId: firebaseUser.uid,
+                  type: 'referral',
+                  amount: 1000,
+                  createdAt: new Date().toISOString(),
+                  remark: 'Welcome Bonus (Referral)'
+                });
+
+                // Update and record referrer bonus
+                const referrerRef = doc(db, 'users', referredByUid);
+                await updateDoc(referrerRef, {
+                  balance: increment(1000),
+                  totalReferralEarnings: increment(1000)
+                });
+
+                await addDoc(collection(db, 'transactions'), {
+                  userId: referredByUid,
+                  type: 'referral',
+                  amount: 1000,
+                  createdAt: new Date().toISOString(),
+                  remark: `Bonus for referring ${firebaseUser.displayName || 'Friend'}`
+                });
+              }
+
+              // Clear the code after successful claim
+              localStorage.removeItem('referredByCode');
+              
               setProfile(newProfile);
             } catch (error) {
               handleFirestoreError(error, OperationType.WRITE, userDocPath);

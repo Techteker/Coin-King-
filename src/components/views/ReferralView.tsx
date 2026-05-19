@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Users, Copy, Check, Info, Calendar, Mail, User, Wallet, Sparkles, AlertCircle } from 'lucide-react';
 import { useAuth } from '../FirebaseProvider';
 import { db } from '../../lib/firebase';
-import { doc, updateDoc, getDoc, arrayUnion, increment, addDoc, collection } from 'firebase/firestore';
+import { doc, updateDoc, getDoc, arrayUnion, increment, addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 
 const ReferralView: React.FC = () => {
@@ -31,12 +31,15 @@ const ReferralView: React.FC = () => {
 
   const handleClaimReferrer = async () => {
     if (!profile || !referrerCode || isClaiming) return;
+    
+    const cleanCode = referrerCode.trim().toUpperCase();
+
     if (profile.referredBy) {
       setError('You have already claimed a referral bonus.');
       return;
     }
-    // Check against own referral code or UID
-    if (referrerCode.toUpperCase() === profile.referralCode.toUpperCase() || referrerCode.toLowerCase() === profile.uid.toLowerCase()) {
+    
+    if (cleanCode === profile.referralCode.toUpperCase() || cleanCode === profile.uid.toUpperCase()) {
         setError('You cannot refer yourself.');
         return;
     }
@@ -45,54 +48,60 @@ const ReferralView: React.FC = () => {
     setError(null);
 
     try {
-      // Find the referrer by referralCode
-      // Note: This requires a query in firestore if we search by referralCode field
-      // For now, if the user enters the referral code, we need to find that user.
-      // Since I don't have a lookup by code yet, I'll temporarily assume referrerCode is the UID for the logic to work, 
-      // but the UI will show the 6-digit code.
-      // In a real app, you'd use a query: query(collection(db, 'users'), where('referralCode', '==', referrerCode))
+      // 1. Search for referrer by referralCode (6-digit)
+      const q = query(collection(db, 'users'), where('referralCode', '==', cleanCode));
+      const querySnapshot = await getDocs(q);
       
-      // I'll keep it as referrerCode for now, but in the claim input, 
-      // the user might enter the 6-digit code. 
-      // I should probably warn that for now full UID is needed or implement the query.
-      // Let's implement a simple query if possible, but the rules might not allow it easily without indexes.
-      // I'll stick to the UID logic for functionality but explain or label it.
-      
-      const referrerRef = doc(db, 'users', referrerCode);
-      const referrerSnap = await getDoc(referrerRef);
+      let referrerId = '';
+      let referrerName = 'Friend';
 
-      if (!referrerSnap.exists()) {
-        setError('Invalid referral code/UID.');
-        setIsClaiming(false);
-        return;
+      if (!querySnapshot.empty) {
+        referrerId = querySnapshot.docs[0].id;
+        referrerName = querySnapshot.docs[0].data().displayName || 'Friend';
+      } else {
+        // Fallback: Check if it's a direct UID
+        const directRef = doc(db, 'users', referrerCode);
+        const directSnap = await getDoc(directRef);
+        if (directSnap.exists()) {
+          referrerId = directSnap.id;
+          referrerName = directSnap.data().displayName || 'Friend';
+        } else {
+          setError('Invalid referral code.');
+          setIsClaiming(false);
+          return;
+        }
       }
 
       const userRef = doc(db, 'users', profile.uid);
+      const referrerRef = doc(db, 'users', referrerId);
       
       // Update referee (current user)
       await updateDoc(userRef, {
-        referredBy: referrerCode,
+        referredBy: referrerId,
         balance: increment(1000)
       });
 
       // Update referrer
       await updateDoc(referrerRef, {
-        balance: increment(1000)
+        balance: increment(1000),
+        totalReferralEarnings: increment(1000)
       });
 
-      // ... transactions ...
+      // Transactions
       await addDoc(collection(db, 'transactions'), {
         userId: profile.uid,
         type: 'referral',
         amount: 1000,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        remark: `Referral Bonus (from ${referrerName})`
       });
 
       await addDoc(collection(db, 'transactions'), {
-        userId: referrerCode,
+        userId: referrerId,
         type: 'referral',
         amount: 1000,
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        remark: `Referral Bonus (referring ${profile.displayName || 'Friend'})`
       });
 
       setSuccess('Referral bonus claimed successfully!');

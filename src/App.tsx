@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FirebaseProvider, useAuth } from './components/FirebaseProvider';
 import Navigation from './components/layout/Navigation';
 import Header from './components/layout/Header';
@@ -20,6 +20,15 @@ import { AnimatePresence, motion } from 'motion/react';
 function AppContent() {
   const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'shop' | 'spinner' | 'daily' | 'withdraw' | 'scratch' | 'referral'>('dashboard');
+
+  useEffect(() => {
+    // Capture referral code from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if (ref) {
+      localStorage.setItem('referredByCode', ref);
+    }
+  }, []);
 
   if (loading) {
     return (
