@@ -36,6 +36,7 @@ jobs:
       - name: Build with Gradle
         run: |
           cd android
+          ls -l gradle/wrapper/gradle-wrapper.jar
           chmod +x gradlew
           ./gradlew assembleDebug
 
