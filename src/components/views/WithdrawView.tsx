@@ -6,6 +6,7 @@ import { doc, updateDoc, increment, addDoc, collection } from 'firebase/firestor
 import { db } from '../../lib/firebase';
 import { motion } from 'motion/react';
 import emailjs from '@emailjs/browser';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 const WithdrawView: React.FC = () => {
   const { profile } = useAuth();
@@ -179,7 +180,7 @@ const WithdrawView: React.FC = () => {
                     className="w-full rounded-2xl bg-gray-50/50 p-5 pr-24 text-sm font-black text-gray-900 border border-gray-100 focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 transition-all placeholder:text-gray-300"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 rounded-xl bg-gray-900 px-3 py-2 text-[10px] font-black text-white italic tracking-tighter">
-                    <img src="https://img.icons8.com/fluency/48/coin.png" className="h-3.5 w-3.5" alt="coin" referrerPolicy="no-referrer" />
+                    <CustomGoldCoin className="h-3.5 w-3.5 object-contain" />
                     Coins
                   </div>
                 </div>
@@ -200,7 +201,7 @@ const WithdrawView: React.FC = () => {
             </div>
             <p className="text-[10px] font-black text-blue-800 uppercase tracking-tight leading-tight flex items-center gap-1 flex-wrap">
                Minimum payout 
-               <img src="https://img.icons8.com/fluency/48/coin.png" className="h-2.5 w-2.5" alt="coin" referrerPolicy="no-referrer" />
+               <CustomGoldCoin className="h-3 w-3 object-contain inline-block" />
                <span className="underline decoration-blue-300 decoration-2 underline-offset-2">50,000 Coins ($5.00)</span>. Process time: 24-48 Hours.
             </p>
           </div>

@@ -6,6 +6,7 @@ import { db } from '../../lib/firebase';
 import { Target, Volume2, Users, Star, ShieldCheck, ChevronLeft, Coins, Gift, X, Trophy } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import confetti from 'canvas-confetti';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 interface Segment {
   label: string;
@@ -274,12 +275,8 @@ const SpinnerView: React.FC = () => {
       <div className="w-full max-w-sm mb-10">
         <div className="flex items-center justify-between mb-4">
            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Betting Coin Box</span>
-           <div className="flex items-center gap-1.5 bg-game-yellow/10 pl-1 pr-3 py-1 rounded-full border border-game-yellow/20">
-              <img 
-                src="https://img.icons8.com/fluency/48/coin.png" 
-                alt="Coin"
-                className="h-5 w-5 object-contain"
-              />
+           <div className="flex items-center gap-1.5 bg-game-yellow/10 pl-1.5 pr-3 py-1 rounded-full border border-game-yellow/20">
+              <CustomGoldCoin className="h-5 w-5 object-contain" />
               <span className="text-[10px] font-black text-game-yellow uppercase tracking-tight">{betAmount} Coins</span>
            </div>
         </div>
@@ -439,7 +436,7 @@ const SpinnerView: React.FC = () => {
                 <div className="bg-gray-50 rounded-[32px] p-8 border border-gray-100 mb-10 shadow-inner">
                     <div className="flex items-center justify-center gap-4">
                        <div className="h-12 w-12 rounded-full bg-game-yellow/20 flex items-center justify-center shadow-lg shadow-yellow-100">
-                          <img src="https://img.icons8.com/fluency/48/coin.png" className="h-7 w-7" alt="coin" referrerPolicy="no-referrer" />
+                          <CustomGoldCoin className="h-7 w-7 object-contain" />
                        </div>
                        <span className="text-5xl font-black italic tracking-tighter text-gray-900">
                          {rewardCoins} <span className="text-xs text-gray-400 uppercase not-italic tracking-widest ml-2">Coins</span>

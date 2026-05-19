@@ -3,6 +3,7 @@ import { ShoppingBag, ChevronLeft, ExternalLink, ShieldCheck, ArrowRight, Coins 
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../FirebaseProvider';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 interface Partner {
   id: string;
@@ -143,11 +144,10 @@ const ShopAndEarnView: React.FC = () => {
                             <h3 className="text-2xl font-black italic tracking-tighter text-gray-900 uppercase leading-none mb-2">{partner.name}</h3>
                             <div className="flex flex-wrap gap-2">
                                <div className="bg-game-yellow/10 pl-1.5 pr-3 py-1.5 rounded-full border border-game-yellow/20 flex items-center gap-2">
-                                  <img 
-                                    src="https://img.icons8.com/fluency/48/coin.png" 
+                                  <CustomGoldCoin className="h-5 w-5 object-contain" /> <span style={{ display: 'none' }}
                                     alt="Coin"
                                     className="h-5 w-5 object-contain"
-                                  />
+                                  ></span>
                                   <span className="text-[12px] font-black text-game-yellow uppercase tracking-tight">{partner.coins.toLocaleString()} Coins</span>
                                </div>
                                <div className="bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 flex items-center gap-1.5">
@@ -194,11 +194,8 @@ const ShopAndEarnView: React.FC = () => {
                 <h2 className="text-3xl font-black italic tracking-tighter text-gray-900 uppercase leading-none relative z-10">{selectedPartner.name}</h2>
                 
                 <div className="mt-4 flex items-center justify-center gap-2 bg-game-yellow/10 pl-2 pr-5 py-2.5 rounded-full border border-game-yellow/20 mx-auto w-fit relative z-10">
-                   <img 
-                      src="https://img.icons8.com/fluency/48/coin.png" 
-                      alt="Coin"
-                      className="h-8 w-8 object-contain"
-                   />
+                   <CustomGoldCoin className="h-8 w-8 object-contain" /> <span style={{ display: 'none' }}>
+                   </span>
                    <span className="text-sm font-black text-game-yellow uppercase tracking-tight">Earn {selectedPartner.coins.toLocaleString()} Coins</span>
                 </div>
                 

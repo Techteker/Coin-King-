@@ -2,6 +2,7 @@ import React from 'react';
 import { Target, Gift, ShoppingBag, Grid3x3, ImageIcon, Wallet, Zap, Highlighter, Users } from 'lucide-react';
 import { motion } from 'motion/react';
 import { cn } from '../../lib/utils';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 interface DashboardViewProps {
   onNavigate: (tab: 'dashboard' | 'shop' | 'spinner' | 'daily' | 'withdraw' | 'scratch' | 'referral') => void;
@@ -47,7 +48,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   Win up to 5000 premium coins in one spin!
                 </p>
                 <div className="flex items-center gap-1 mt-1 opacity-70">
-                   <img src="https://img.icons8.com/fluency/48/coin.png" className="h-3 w-3" alt="coin" referrerPolicy="no-referrer" />
+                   <CustomGoldCoin className="h-4.5 w-4.5 object-contain" />
                    <span className="text-[8px] font-black text-white italic">HUGE JACKPOT</span>
                 </div>
               </div>
@@ -122,7 +123,7 @@ const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate }) => {
                   </div>
                   <div className="flex items-center gap-2">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Earn double coins for 24h</p>
-                    <img src="https://img.icons8.com/fluency/48/coin.png" className="h-3 w-3" alt="coin" referrerPolicy="no-referrer" />
+                    <CustomGoldCoin className="h-4 w-4 object-contain" />
                   </div>
                 </div>
               </div>

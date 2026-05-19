@@ -5,6 +5,7 @@ import { useAuth } from '../FirebaseProvider';
 import { db } from '../../lib/firebase';
 import { doc, updateDoc, getDoc, arrayUnion, increment, addDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 const ReferralView: React.FC = () => {
   const { profile } = useAuth();
@@ -193,7 +194,7 @@ const ReferralView: React.FC = () => {
                     <Wallet size={10} /> Total Earning
                   </span>
                   <div className="flex items-center justify-end gap-1">
-                     <img src="https://img.icons8.com/fluency/48/coin.png" className="h-4 w-4" alt="coin" referrerPolicy="no-referrer" />
+                     <CustomGoldCoin className="h-4.5 w-4.5 object-contain" />
                      <p className="text-sm font-black text-blue-600 uppercase italic">
                        {profile?.balance.toLocaleString() || '0'}
                      </p>
@@ -265,7 +266,7 @@ const ReferralView: React.FC = () => {
                     <div>
                        <div className="flex items-center gap-2">
                           <h3 className="text-sm font-black italic tracking-tighter uppercase leading-none text-gray-900">Claim Code</h3>
-                          <img src="https://img.icons8.com/fluency/48/coin.png" className="h-3 w-3" alt="coin" referrerPolicy="no-referrer" />
+                          <CustomGoldCoin className="h-4 w-4 object-contain" />
                        </div>
                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">Instant 1000 Coins Reward</p>
                     </div>
@@ -333,7 +334,7 @@ const ReferralView: React.FC = () => {
                  <div>
                     <div className="flex items-center gap-1.5">
                        <h4 className="text-[11px] font-black uppercase tracking-tight italic">Both Get 1000 Coins</h4>
-                       <img src="https://img.icons8.com/fluency/48/coin.png" className="h-2.5 w-2.5" alt="coin" referrerPolicy="no-referrer" />
+                       <CustomGoldCoin className="h-3 w-3 object-contain" />
                     </div>
                     <p className="text-[10px] font-medium text-gray-400 leading-snug pt-0.5">When they claim your code, both of you receive 1000 rewarding coins instantly.</p>
                  </div>
@@ -346,7 +347,7 @@ const ReferralView: React.FC = () => {
                  <div>
                     <div className="flex items-center gap-1.5">
                        <h4 className="text-[11px] font-black uppercase tracking-tight italic">10% Lifetime Earning</h4>
-                       <img src="https://img.icons8.com/fluency/48/coin.png" className="h-2.5 w-2.5" alt="coin" referrerPolicy="no-referrer" />
+                       <CustomGoldCoin className="h-3 w-3 object-contain" />
                     </div>
                     <p className="text-[10px] font-medium text-gray-400 leading-snug pt-0.5">Earn 10% commission on every activity your friend completes. Forever!</p>
                  </div>

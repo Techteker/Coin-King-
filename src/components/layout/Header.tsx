@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../FirebaseProvider';
 import { LogOut, Coins } from 'lucide-react';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 const Header: React.FC = () => {
   const { profile, logout } = useAuth();
@@ -31,12 +32,7 @@ const Header: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className="group relative flex items-center gap-2 rounded-2xl bg-gray-50 pl-2 pr-4 py-1.5 border border-gray-100 transition-all hover:bg-gray-100">
             <div className="shine-effect relative h-7 w-7 flex items-center justify-center rounded-lg bg-white shadow-sm ring-1 ring-gold-start/20">
-              <img 
-                src="https://img.icons8.com/fluency/48/coin.png" 
-                alt="Coin"
-                className="h-5 w-5 object-contain"
-                referrerPolicy="no-referrer"
-              />
+              <CustomGoldCoin className="h-6 w-6 object-contain" />
             </div>
             <span className="text-sm font-black tracking-tighter text-gray-900 italic">
               {profile?.balance.toLocaleString() || '0'}

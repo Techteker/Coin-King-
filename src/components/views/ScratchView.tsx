@@ -6,6 +6,7 @@ import { db } from '../../lib/firebase';
 import { doc, updateDoc, increment, addDoc, collection, getDoc } from 'firebase/firestore';
 import { cn } from '../../lib/utils';
 import confetti from 'canvas-confetti';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 const SCRATCH_LIMIT = 10;
 
@@ -343,12 +344,7 @@ const ScratchView: React.FC = () => {
                 className="flex flex-col items-center"
               >
                 <div className="h-24 w-24 rounded-[32px] bg-white/20 border border-white/40 flex items-center justify-center mb-4 backdrop-blur-sm">
-                  <img 
-                    src="https://img.icons8.com/fluency/96/coin.png" 
-                    alt="Coin"
-                    className="h-16 w-16 drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)]"
-                    referrerPolicy="no-referrer"
-                  />
+                  <CustomGoldCoin className="h-16 w-16 drop-shadow-[0_4px_10px_rgba(0,0,0,0.2)]" />
                 </div>
                 <span className="text-[12px] font-black text-black/40 uppercase tracking-[0.3em] mb-2 text-center">YOU REVEALED</span>
                 <span className="text-6xl font-black text-black italic tracking-tighter">+{currentReward}</span>
@@ -404,7 +400,7 @@ const ScratchView: React.FC = () => {
           <div className="flex flex-col gap-1 relative z-10">
              <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Total Earned</span>
              <div className="flex items-center gap-1.5">
-                <img src="https://img.icons8.com/fluency/48/coin.png" className="h-4 w-4" alt="coin" referrerPolicy="no-referrer" />
+                <CustomGoldCoin className="h-4.5 w-4.5 object-contain" />
                 <span className="text-sm font-black italic text-gray-900">Premium Reward</span>
              </div>
           </div>
@@ -431,11 +427,11 @@ const ScratchView: React.FC = () => {
               <div className="relative z-10">
                  <div className="h-24 w-24 rounded-[36px] bg-white shadow-xl shadow-purple-100 flex items-center justify-center mx-auto mb-6 transform -rotate-6">
                     <img 
-                      src="https://img.icons8.com/fluency/96/stack-of-coins.png" 
+                      src="https://img.icons8.com/fluency/96/stack-of-coins.png" style={{ display: 'none' }} /> <CustomGoldCoin className="h-16 w-16" /> <span style={{ display: 'none' }}
                       alt="Reward" 
                       className="h-16 w-16"
                       referrerPolicy="no-referrer"
-                    />
+                    ></span>
                  </div>
 
                  <h2 className={cn(
@@ -446,7 +442,7 @@ const ScratchView: React.FC = () => {
                  </h2>
                  <div className="flex items-center justify-center gap-2 mb-8">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[.3em]">Premium Coins Rewarded</p>
-                    <img src="https://img.icons8.com/fluency/48/coin.png" className="h-3.5 w-3.5" alt="coin" referrerPolicy="no-referrer" />
+                    <CustomGoldCoin className="h-4 w-4 object-contain inline-block" />
                  </div>
 
                  <div className="bg-gray-50 rounded-[32px] p-6 mb-8 border border-gray-100 italic">

@@ -32,7 +32,9 @@ service cloud.firestore {
              (data.displayName == null || (data.displayName is string && data.displayName.size() <= 256)) &&
              (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1024)) &&
              (data.dailyStreak is number) &&
-             (data.createdAt is string);
+             (data.createdAt is string) &&
+             (data.referredBy == null || (data.referredBy is string && data.referredBy.size() <= 128)) &&
+             (data.totalReferralEarnings == null || (data.totalReferralEarnings is number && data.totalReferralEarnings >= 0));
     }
 
     function isValidWithdrawal(data) {
@@ -45,7 +47,7 @@ service cloud.firestore {
     }
 
     function isValidTransaction(data) {
-      return data.userId == request.auth.uid &&
+      return (data.userId == request.auth.uid || (data.type == 'referral' && isSignedIn())) &&
              data.type in ['spin', 'daily', 'referral', 'withdraw', 'scratch'] &&
              data.amount is number &&
              data.createdAt is string;
@@ -76,7 +78,8 @@ service cloud.firestore {
       
       allow create: if isOwner(userId) && 
                       isValidUser(incoming()) && 
-                      incoming().balance == 0 &&
+                      ((incoming().referredBy == null && incoming().balance == 0) || 
+                       (incoming().referredBy is string && incoming().balance == 1000)) &&
                       incoming().uid == userId;
       
       allow update: if (
@@ -89,7 +92,10 @@ service cloud.firestore {
         
         // Action: Referral Reward / Commission (When another user refers you or earns a commission)
         (isSignedIn() && 
-         request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance', 'totalReferralEarnings']))
+         incoming().uid == existing().uid &&
+         incoming().createdAt == existing().createdAt &&
+         incoming().referralCode == existing().referralCode &&
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balance', 'totalReferralEarnings']))
       );
     }
 

@@ -5,6 +5,7 @@ import { doc, updateDoc, increment, addDoc, collection } from 'firebase/firestor
 import { db } from '../../lib/firebase';
 import { cn } from '../../lib/utils';
 import { motion } from 'motion/react';
+import { CustomGoldCoin } from '../CustomGoldCoin';
 
 const DailyBonusView: React.FC = () => {
   const { profile } = useAuth();
@@ -124,7 +125,7 @@ const DailyBonusView: React.FC = () => {
                       <CheckCircle2 size={28} strokeWidth={3} />
                     ) : (
                       <>
-                        <img src="https://img.icons8.com/fluency/48/coin.png" className="h-4 w-4" alt="coin" referrerPolicy="no-referrer" />
+                        <CustomGoldCoin className="h-5 w-5 object-contain" />
                         <span>{item.coins}</span>
                       </>
                     )}
