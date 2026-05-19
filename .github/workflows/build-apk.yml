@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -26,19 +28,23 @@ jobs:
       - name: Capacitor Sync
         run: npx cap sync android
 
-      - name: set up JDK 17
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'zulu'
           cache: gradle
 
+      - name: Fix line endings and permissions
+        run: |
+          cd android
+          find . -name "gradlew" -exec sed -i 's/\r$//' {} +
+          chmod +x gradlew
+
       - name: Build with Gradle
         run: |
           cd android
-          ls -l gradle/wrapper/gradle-wrapper.jar
-          chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
