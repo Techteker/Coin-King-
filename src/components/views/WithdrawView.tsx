@@ -5,46 +5,89 @@ import { cn } from '../../lib/utils';
 import { doc, updateDoc, increment, addDoc, collection } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { motion } from 'motion/react';
+import emailjs from '@emailjs/browser';
 
 const WithdrawView: React.FC = () => {
   const { profile } = useAuth();
-  const [method, setMethod] = useState<'paytm' | 'phonepe' | 'paypal'>('paytm');
+  const [method, setMethod] = useState<'upi' | 'mobile' | 'paypal'>('upi');
   const [account, setAccount] = useState('');
-  const [amount, setAmount] = useState('100000');
+  const [amount, setAmount] = useState('50000');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profile || profile.balance < 100000) {
-      alert("Minimum withdrawal is 100,000 coins.");
+    if (!profile || profile.balance < 50000) {
+      alert("Minimum withdrawal is 50,000 coins.");
+      return;
+    }
+
+    const withdrawAmount = parseInt(amount);
+    if (withdrawAmount < 50000) {
+      alert("Minimum withdrawal is 50,000 coins.");
+      return;
+    }
+
+    if (profile.balance < withdrawAmount) {
+      alert("Insufficient balance.");
       return;
     }
     
     setIsSubmitting(true);
     
     try {
+      // 1. Send Email Notification (Gmailjs / EmailJS)
+      const templateParams = {
+        name: profile.displayName || 'Unnamed User',
+        email: profile.email || 'No email provided',
+        payment_method: method.toUpperCase(),
+        payment_details: account,
+        amount_coins: withdrawAmount,
+        usd_value: (withdrawAmount / 10000).toFixed(2),
+        user_id: profile.uid
+      };
+
+      // We use try-catch for EmailJS specifically so it doesn't block the whole process 
+      // if keys aren't set, but for the user's request we assume they will set them.
+      try {
+        await emailjs.send(
+          import.meta.env.VITE_EMAILJS_SERVICE_ID || '',
+          import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '',
+          templateParams,
+          import.meta.env.VITE_EMAILJS_PUBLIC_KEY || ''
+        );
+      } catch (err) {
+        console.warn("EmailJS notification failed, but continuing with DB update.", err);
+      }
+
+      // 2. Save to Firestore (Backup & History)
       await addDoc(collection(db, 'withdrawals'), {
         userId: profile.uid,
-        amount: parseInt(amount),
+        userName: profile.displayName,
+        userEmail: profile.email,
+        amount: withdrawAmount,
         method,
         accountDetails: account,
         status: 'pending',
         createdAt: new Date().toISOString()
       });
 
+      // 3. Update User Balance
       await updateDoc(doc(db, 'users', profile.uid), {
-        balance: increment(-parseInt(amount))
+        balance: increment(-withdrawAmount)
       });
 
+      // 4. Log Transaction
       await addDoc(collection(db, 'transactions'), {
         userId: profile.uid,
         type: 'withdraw',
-        amount: -parseInt(amount),
+        amount: -withdrawAmount,
         createdAt: new Date().toISOString()
       });
 
-      alert("Withdrawal request submitted successfully!");
+      // Final Success Notification
+      alert("aapka payment 24-48 hours me mil jayega......");
       setAccount('');
+      setAmount('50000');
     } catch (error) {
       console.error(error);
       alert("Something went wrong. Please try again.");
@@ -54,16 +97,16 @@ const WithdrawView: React.FC = () => {
   };
 
   const methods = [
-    { id: 'paytm', icon: Smartphone, label: 'Paytm', color: 'from-blue-500 to-indigo-600' },
-    { id: 'phonepe', icon: Landmark, label: 'PhonePe', color: 'from-purple-500 to-indigo-700' },
-    { id: 'paypal', icon: Mail, label: 'PayPal', color: 'from-blue-400 to-blue-600' },
+    { id: 'upi', icon: Landmark, label: 'UPI ID', color: 'from-blue-500 to-indigo-600' },
+    { id: 'mobile', icon: Smartphone, label: 'Mobile No.', color: 'from-purple-500 to-indigo-700' },
+    { id: 'paypal', icon: Mail, label: 'PayPal ID', color: 'from-blue-400 to-blue-600' },
   ] as const;
 
   return (
     <div className="mx-auto max-w-lg space-y-8 pb-32 pt-4">
       <div className="text-center space-y-2 mb-8">
-         <h2 className="text-3xl font-black italic tracking-tighter uppercase text-gray-900 leading-none">Wallet Cashout</h2>
-         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">Redeem your coins for real cash</p>
+         <h2 className="text-3xl font-black italic tracking-tighter uppercase text-gray-900 leading-none">Withdrawal System</h2>
+         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em]">Convert your coins to USD cash</p>
       </div>
 
       {/* Payment Methods */}
@@ -108,14 +151,14 @@ const WithdrawView: React.FC = () => {
           <div className="space-y-6">
              <div className="space-y-2">
                 <div className="flex items-center justify-between ml-1">
-                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Account Details</label>
+                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Payment Details</label>
                    <span className="text-[9px] font-black text-blue-500 uppercase tracking-widest italic flex items-center gap-1">
-                      <CheckCircle2 size={10} /> Verified
+                      <CheckCircle2 size={10} /> Secure Transfer
                    </span>
                 </div>
                 <input
                   type="text"
-                  placeholder={`Enter ${method === 'paypal' ? 'PayPal Email' : 'Mobile Number'}...`}
+                  placeholder={`Enter your ${method === 'paypal' ? 'PayPal Email' : method === 'upi' ? 'UPI ID' : 'Mobile Number'}...`}
                   required
                   value={account}
                   onChange={(e) => setAccount(e.target.value)}
@@ -124,11 +167,12 @@ const WithdrawView: React.FC = () => {
              </div>
 
              <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Redeem Amount</label>
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Redeem Amount (Min 50,000)</label>
                 <div className="relative">
                   <input
                     type="number"
-                    placeholder="Amount"
+                    placeholder="50000"
+                    min="50000"
                     required
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
@@ -139,9 +183,14 @@ const WithdrawView: React.FC = () => {
                     Coins
                   </div>
                 </div>
-                <p className="ml-1 text-[9px] font-bold text-gray-400 uppercase tracking-widest">
-                   Equivalent: <span className="text-gray-900 font-black italic">≈ ${ (parseInt(amount || '0') / 10000).toFixed(2) }</span>
-                </p>
+                <div className="flex justify-between items-center px-1">
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">
+                     Equivalent: <span className="text-gray-900 font-black italic">≈ ${ (parseInt(amount || '0') / 10000).toFixed(2) } USD</span>
+                  </p>
+                  <p className="text-[9px] font-bold text-gray-600 uppercase tracking-widest">
+                     Balance: <span className="text-game-purple font-black">{profile?.balance?.toLocaleString() || 0}</span>
+                  </p>
+                </div>
              </div>
           </div>
 
@@ -152,13 +201,13 @@ const WithdrawView: React.FC = () => {
             <p className="text-[10px] font-black text-blue-800 uppercase tracking-tight leading-tight flex items-center gap-1 flex-wrap">
                Minimum payout 
                <img src="https://img.icons8.com/fluency/48/coin.png" className="h-2.5 w-2.5" alt="coin" referrerPolicy="no-referrer" />
-               <span className="underline decoration-blue-300 decoration-2 underline-offset-2">100,000 Coins ($10.00)</span>. Processing time: 24-48 Hours.
+               <span className="underline decoration-blue-300 decoration-2 underline-offset-2">50,000 Coins ($5.00)</span>. Process time: 24-48 Hours.
             </p>
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting || (profile?.balance || 0) < 100000}
+            disabled={isSubmitting || (profile?.balance || 0) < 50000}
             className="group shine-effect dark-premium-gradient w-full rounded-2xl py-6 shadow-xl shadow-indigo-200 transition-all active:scale-95 disabled:grayscale disabled:opacity-50"
           >
             <span className="text-lg font-black tracking-[0.2em] text-white uppercase italic flex items-center justify-center gap-3">
