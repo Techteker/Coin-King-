@@ -1,0 +1,115 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- 1. GLOBAL HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+
+    // --- 2. ENTITY VALIDATORS ---
+
+    function isValidUser(data) {
+      return data.uid is string && data.uid.size() <= 128 &&
+             data.balance is number && data.balance >= 0 &&
+             data.referralCode is string && data.referralCode.size() <= 10 &&
+             (data.email == null || (data.email is string && data.email.size() <= 256)) &&
+             (data.displayName == null || (data.displayName is string && data.displayName.size() <= 256)) &&
+             (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1024)) &&
+             (data.dailyStreak is number) &&
+             (data.createdAt is string);
+    }
+
+    function isValidWithdrawal(data) {
+      return data.userId == request.auth.uid &&
+             data.amount is number && data.amount >= 50000 &&
+             data.method in ['paytm', 'phonepe', 'paypal'] &&
+             data.status == 'pending' &&
+             data.accountDetails is string && data.accountDetails.size() <= 256 &&
+             data.createdAt is string;
+    }
+
+    function isValidTransaction(data) {
+      return data.userId == request.auth.uid &&
+             data.type in ['spin', 'daily', 'referral', 'withdraw', 'scratch'] &&
+             data.amount is number &&
+             data.createdAt is string;
+    }
+
+    function isValidScratch(data) {
+      return data.userId == request.auth.uid &&
+             data.reward is number && data.reward >= 1 && data.reward <= 250 &&
+             data.scratchedAt is string &&
+             data.dayKey is string &&
+             data.scratchCount is number && data.scratchCount <= 10;
+    }
+
+    // --- 3. GLOBAL SAFETY NET ---
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- 4. COLLECTION RULES ---
+
+    // Users collection
+    match /users/{userId} {
+      // allow get: Only allow users to read their own private data, or anyone to see public profile
+      allow get: if isSignedIn(); // We allow get for referral lookups and self
+      
+      // allow list: For referral code lookup query
+      allow list: if isSignedIn(); 
+      
+      allow create: if isOwner(userId) && 
+                      isValidUser(incoming()) && 
+                      incoming().balance == 0 &&
+                      incoming().uid == userId;
+      
+      allow update: if (
+        // Action: Self update (Playing games, claiming rewards)
+        (isOwner(userId) && 
+         isValidUser(incoming()) && 
+         incoming().uid == existing().uid &&
+         incoming().createdAt == existing().createdAt &&
+         request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance', 'lastDailyClaim', 'dailyStreak', 'referredBy', 'photoURL', 'displayName', 'totalScratches', 'lastScratchDate', 'dailyScratchCount', 'totalReferralEarnings'])) ||
+        
+        // Action: Referral Reward / Commission (When another user refers you or earns a commission)
+        (isSignedIn() && 
+         request.resource.data.diff(resource.data).affectedKeys().hasAny(['balance', 'totalReferralEarnings']))
+      );
+    }
+
+    // Withdrawals collection
+    match /withdrawals/{withdrawalId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidWithdrawal(incoming());
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidTransaction(incoming());
+    }
+
+    // Scratch rewards collection
+    match /scratch_rewards/{rewardId} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidScratch(incoming()) && isValidId(rewardId);
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Coin King - Spin & Earn",
+  "description": "Earn coins by spinning the wheel, claiming daily rewards, and referring friends. Withdraw your earnings via Paytm, PhonePe, or PayPal.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
