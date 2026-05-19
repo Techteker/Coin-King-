@@ -1,4 +1,4 @@
-name: Build APK
+name: Build Coin King APK
 
 on:
   workflow_dispatch:
@@ -11,37 +11,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      - name: Setup Java
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
-      - name: Build web app
+      - name: Build Web App
         run: npm run build
 
       - name: Install Capacitor
         run: npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Sync Android
+      - name: Initialize Capacitor (safe init)
+        run: npx cap init CoinKing com.coinking.app
+
+      - name: Add Android Platform (safe)
+        run: npx cap add android || true
+
+      - name: Sync Capacitor with Android
         run: npx cap sync android
 
-      - name: Build APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Build Debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: coin-king-apk
+          name: coin-king-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
