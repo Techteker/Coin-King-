@@ -18,11 +18,11 @@ interface Segment {
 
 const segments: Segment[] = [
   { label: '0×', multiplier: 0, color: '#1a1a1a', weight: 40, textColor: '#666666' },
-  { label: '1×', multiplier: 1, color: '#3b82f6', weight: 30, textColor: '#ffffff' },
+  { label: '1×', multiplier: 1, color: '#3b82f6', weight: 40, textColor: '#ffffff' },
   { label: '2×', multiplier: 2, color: '#8b5cf6', weight: 10, textColor: '#ffffff' },
-  { label: '3×', multiplier: 3, color: '#ec4899', weight: 7, textColor: '#ffffff' },
-  { label: '4×', multiplier: 4, color: '#f97316', weight: 8, textColor: '#ffffff' },
-  { label: '5×', multiplier: 5, color: '#eab308', weight: 5, textColor: '#000000' },
+  { label: '3×', multiplier: 3, color: '#ec4899', weight: 5, textColor: '#ffffff' },
+  { label: '4×', multiplier: 4, color: '#f97316', weight: 4, textColor: '#ffffff' },
+  { label: '5×', multiplier: 5, color: '#eab308', weight: 1, textColor: '#000000' },
 ];
 
 const SpinnerView: React.FC = () => {

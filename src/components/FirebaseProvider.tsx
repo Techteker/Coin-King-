@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc, onSnapshot, getDocFromServer, collection, query, where, getDocs, increment, updateDoc, addDoc, limit } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { UserProfile } from '../types';
@@ -61,6 +61,8 @@ interface AuthContextType {
   loading: boolean;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  signInWithEmail: (email: string, password: string) => Promise<void>;
+  signUpWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -212,10 +214,45 @@ export const FirebaseProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email.trim(), password);
+    } catch (error: any) {
+      console.error("Email Login Error:", error);
+      let message = error.message;
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        message = "Incorrect email or password. Please try again.";
+      } else if (error.code === 'auth/invalid-email') {
+        message = "Please enter a valid email address.";
+      }
+      throw new Error(message);
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string, displayName: string) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: displayName.trim() });
+      }
+    } catch (error: any) {
+      console.error("Email Signup Error:", error);
+      let message = error.message;
+      if (error.code === 'auth/email-already-in-use') {
+        message = "This email is already registered. Please login instead.";
+      } else if (error.code === 'auth/weak-password') {
+        message = "Password should be at least 6 characters long.";
+      } else if (error.code === 'auth/invalid-email') {
+        message = "Please enter a valid email address.";
+      }
+      throw new Error(message);
+    }
+  };
+
   const logout = () => signOut(auth);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, profile, loading, login, logout, signInWithEmail, signUpWithEmail }}>
       {children}
     </AuthContext.Provider>
   );
